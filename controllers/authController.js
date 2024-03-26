@@ -3,6 +3,7 @@ const { hashPassword, comparePassword } = require("../utils/helpers");
 const User = require("../models/user");
 const jwt = require("jsonwebtoken");
 
+
 const maxAge = 3 * 24 * 60 * 60;
 const createToken = (id) => {
   return jwt.sign({ id }, "h8BHWDXuW1IPcUHNcCNdsDKucaqHgLzN6ZZT4DMm0LM", {
@@ -28,7 +29,7 @@ const registerUser = async (req, res, next) => {
       password: hashedPassword,
     });
     const token = createToken(newUser._id);
-    res.cookie('auth-jwt', token, { maxAge: maxAge * 1000, httpOnly: true });
+    res.cookie('auth_jwt', token, { maxAge: maxAge * 1000, httpOnly: true });
     return res
       .status(201).json({
         responseMessage: "User created successfully",
@@ -54,13 +55,14 @@ const loginUser = async (req, res) => {
   }
   const { email, password } = req.body;
   const userdb = await User.findOne({ email });
-  const token = createToken(userdb._id);
-  res.cookie("auth-jwt", token, { maxAge: maxAge * 1000, httpOnly: true });
+  
   if (!userdb)
     return res.status(401).send({
-      responseMessage: "Invalid login credentials kindly check and try again",
+      responseMessage: "Email not registered",
       responseCode: 401,
     });
+  const token = createToken(userdb._id);
+  res.cookie("auth_jwt", token, { maxAge: maxAge * 1000, httpOnly: true });
   const isValid = comparePassword(password, userdb.password);
   if (isValid) {
     // req.session.user = userdb;
@@ -75,7 +77,7 @@ const loginUser = async (req, res) => {
   } else {
     // res.sendStatus(401);
     return res.status(401).send({
-      responseMessage: "Invalid login credentials kindly check and try again",
+      responseMessage: "Password is incorrect",
       responseCode: 401,
     });
   }
