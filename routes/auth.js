@@ -1,28 +1,36 @@
-const express = require('express');
+const express = require("express");
+const { body } = require("express-validator");
+const { registerUser, loginUser } = require("../controllers/authController");
 const router = express.Router();
-const { body,  validationResult } = require('express-validator');
-const { hashPassword, comparePassword } = require("../utils/helper");
-const { registerUser, loginUser } = require('../controllers/authController');
 
-router.post('/register', [
-    body('name').notEmpty().withMessage('Name field is required'),
-    body('email').isEmail().withMessage('Invalid email address'),
-    body('phone').isMobilePhone().withMessage('Invalid phone number'),
-    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-    // body('confirmpassword').isLength({ min: 8 }).withMessage('Confirm password must be at least 8 characters'),
-    body('confirmpassword').custom((value, { req }) => {
+/* GET home page. */
+router.post(
+  "/login",
+  [
+    body("email").isEmail().withMessage("Invalid email address"),
+    body("password").isLength({ min: 6 }).withMessage("Password must be at least 6 characters"),
+  ],
+  loginUser
+);
+
+router.post(
+  "/register",
+  [
+    body("name").notEmpty().withMessage("Name field is required"),
+    body("email").isEmail().withMessage("Invalid email address"),
+    body("phone").isMobilePhone().withMessage("Invalid phone number"),
+    body("password")
+      .isLength({ min: 6 })
+      .withMessage("Password must be at least 6 characters"),
+    body("confirmpassword")
+      .custom((value, { req }) => {
         if (value !== req.body.password) {
-            throw new Error('Confirm password does not match password');
+          throw new Error('Passwords do not match'); 
         }
         return true;
-    })
-], registerUser);
-
-router.post('/login', [
-    body('email').isEmail().withMessage('Invalid email address'),
-    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-], loginUser);
+      })
+  ],
+  registerUser
+);
 
 module.exports = router;
-
-
