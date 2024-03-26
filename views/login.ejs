@@ -1,0 +1,107 @@
+<%- include('header') %>
+<body style="background:#062863;">
+<!-- <%- include('navbar') %> -->
+<center>
+  <h1 class="text-light mb-4" style="margin-top: 40px; font-family:sans-serif; font-weight:bold">SM3</h1>
+</center>
+<div class="card" style="margin:0px auto; margin-top: 50px; width:35rem; border-top-left-radius:25px; border-bottom-right-radius:25px;">
+  <!-- <div class="card-header">
+    Login
+  </div> -->
+  <div class="card-body" style="padding:30px; ">
+    <!-- <h2 class="text-center">SM3</h2> -->
+    <h2 class="text-center mt-2" style="color:#083e9e; font-family:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif; font-weight:100;">Login to your account</h2>
+    <p class="text-center mb-3">Securely login to laundey</p>
+    <div id="response"></div>
+    <form id="loginForm">
+      <div class="form-group mt-2">
+        <label for="email">Email</label>
+         <input type="email" name="email" id="email" class="form-control form-control-sm">
+         <small class="d-none text-danger" id="emailError"></small>
+      </div> 
+      <div class="form-group mt-2">
+        <label for="password">Password</label>
+         <input type="password" name="password" id="password" class="form-control form-control-sm">
+         <small class="d-none text-danger" id="passwordError"></small>
+     </div> 
+      <div class="form-group mt-3 mb-4 d-md-block">
+        <button type="submit" class="btn btn-primary btn-block">Login</button>
+      </div>
+      
+    </form>
+  </div>
+</div>
+<center>
+  <p class="text-light mt-4" style="font-weight:normal">Don't have an account? <a style="text-decoration: none; color:white; font-weight:normal;" href="/register">register</a></p>
+</center>
+<%- include('footer') %>
+<script>
+  const loginForm = document.getElementById('loginForm');
+  loginForm.addEventListener('submit', function(event) {
+    event.preventDefault(); // Prevent the default form submission behavior
+    $('#emailError').addClass('d-none');
+    $('#passwordError').addClass('d-none');
+    $('#email').removeClass('is-invalid');
+    $('#password').removeClass('is-invalid');
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+
+    const formData = {
+      email,
+      password
+    };
+
+    fetch('/auth/login', {
+        method: 'POST', // Use the HTTP method appropriate for your backend
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        // Process the response from the backend
+        console.log(data);
+        if (data.responseCode === 200) {
+          // Redirect to another page after successful login
+          toastr.success(data.responseMessage, '', {
+                        timeOut: 3000,
+                        progressBar: true
+                    });
+
+                    // Delay the redirection for 3 seconds
+                    setTimeout(function() {
+                        // window.location = '/login';
+                    }, 3000);
+          // window.location.href = '/dashboard'; // Replace '/dashboard' with the URL of the desired page
+        } else {
+          var errors = data.responseMessage;
+                  if (errors && errors.length > 0) {
+                    $.each(errors, (index, err) => {
+                     
+                      if (err.path == 'email') {
+                      $('#email').addClass('is-invalid');
+                      $('#emailError').removeClass('d-none');
+                      $('#emailError').text(err.msg);
+                      }
+                      
+                      if (err.path == 'password') {
+                      $('#password').addClass('is-invalid');
+                      $('#passwordError').removeClass('d-none');
+                      $('#passwordError').text(err.msg);
+                      }
+                      
+                    });
+                    return;
+                  }
+        }
+      })
+      .catch(error => {
+        console.log('Error sending data:', error);
+      });
+  });
+</script>
+
+</body>
+
+</html>
