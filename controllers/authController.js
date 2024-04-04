@@ -83,7 +83,15 @@ const loginUser = async (req, res) => {
   }
 }
 
+const logoutUser = (req, res) => { 
+  res.cookie('auth_jwt', '', { maxAge: 1 });
+  res.redirect('/register');
+}
+
+
+
 module.exports = {
   registerUser,
-  loginUser
+  loginUser,
+  logoutUser
 };
