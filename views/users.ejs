@@ -29,76 +29,243 @@
         <div class="card">
           <div class="card-body">
 
-            <h4 class="card-title">Buttons example</h4>
-            <p class="card-title-desc">The Buttons extension for DataTables provides a common
-              set of options, API methods and styling to display buttons on a page that will
-              interact with a DataTable. The core library provides the based framework upon
-              which plug-ins can built.
-            </p>
+            <h4 class="card-title">Users List</h4>
+            
+            <div class="table-responsive">
+              <table id="userTable" class="table table-bordered dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Created At</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
 
-            <table id="userTable" class="table table-bordered dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Phone</th>
-                  <th>Created At</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
+                <tbody>
 
-              <tbody>
-             
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
       <!-- end col -->
     </div>
+    <div id="myModal" class="modal fade mt-lg-3" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title mt-0" id="myModalLabel">Edit User
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
 
-    
+            <form id="myForm">
+              <div class="form-group">
+                <label for="name" class="fw-lighter">Fullname</label>
+                <input type="hidden" name="id" id="id" class="form-control">
+                <input type="text" name="name" id="name" class="form-control form-control">
+                <small class="text-danger d-none" id="nameError"></small>
+              </div>
+              <div class="form-group mt-2">
+                <label for="email">Email</label>
+                <input type="email" readonly name="email" id="email" class="form-control form-control">
+                <small class="text-danger d-none" id="emailError"></small>
+              </div>
+              <div class="form-group mt-2">
+                <label for="phone">Phone Number</label>
+                <input type="phone" name="phone" id="phone" class="form-control form-control">
+                <small class="text-danger d-none" id="phoneError"></small>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary btn-md waves-effect" data-bs-dismiss="modal">Close</button>
+            <button type="button" onclick="update()" class="btn btn-primary btn-md waves-effect waves-light">Save
+              changes</button>
+          </div>
+        </div>
+        <!-- /.modal-content -->
+      </div>
+      <!-- /.modal-dialog -->
+    </div>
+
 
 
     <%- include('partials/footer') %>
     <%- include('partials/vendor-scripts') %>
     <script>
       $(document).ready(function() {
-        $.ajax({
-          url: '/users/getusers',
-          type: 'GET',
-          success: function(data) {
-            // Populate the datatable with the received data
-            $('#userTable').DataTable({
-              data: data,
-              columns: [{
-                  data: 'name'
-                },
-                {
-                  data: 'email'
-                },
-                {
-                data: 'phone'
-                },
-                {
-                data: 'createdAt'
-                },
-                {
-                data: '_id',
-                render: function(data, type, row) {
-                // Render a button with the user id as its value
-                return '<button class="btn btn-primary btn-sm" onclick="viewUser(' + data + ')">Edit</button>';
-                }
-                }
-                // Add other columns as needed
-              ]
-            });
-          },
-          error: function(err) {
-            console.error('Error fetching users:', err);
-          }
-        });
+
+        showTable()
+
+        function showTable() {
+          $.ajax({
+            url: '/users/getusers',
+            type: 'GET',
+            success: function(data) {
+              // Populate the datatable with the received data
+              $('#userTable').DataTable({
+                data: data,
+                columns: [{
+                    data: 'name'
+                  },
+                  {
+                    data: 'email'
+                  },
+                  {
+                    data: 'phone'
+                  },
+                  {
+                    data: 'createdAt'
+                  },
+                  {
+                    data: '_id',
+                    render: function(data, type, row) {
+                      // Render a button with the user id as its value
+                      return '<button class="btn btn-primary btn-sm" onclick="editUser(\'' + data + '\')">Edit</button>';
+                    }
+                  }
+                  // Add other columns as needed
+                ]
+              });
+            },
+            error: function(err) {
+              console.error('Error fetching users:', err);
+            }
+          });
+        }
       });
+
+      function editUser(id) {
+
+        fetch('/users/editusers', {
+            method: 'POST', // Use the HTTP method appropriate for your backend
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              id: id
+            })
+          })
+          .then(response => response.json())
+          .then(data => {
+            // Process the response from the backend
+            console.log(data);
+            if (data.responseCode === 200) {
+              $("#name").val(data.data.name);
+              $("#email").val(data.data.email);
+              $("#phone").val(data.data.phone);
+              $("#id").val(data.data.id);
+
+              // showTable
+              $("#myModal").modal('show');
+
+            } else if (data.responseCode == 401) {
+              toastr.error(data.responseMessage, '', {
+                timeOut: 3000,
+                progressBar: true
+              });
+            } else {
+              var errors = data.responseMessage;
+              if (errors && errors.length > 0) {
+
+                $.each(errors, (index, err) => {
+                  toastr.error(err.msg, '', {
+                    timeOut: 3000,
+                    progressBar: true
+                  });
+
+
+                });
+                return;
+              }
+            }
+          })
+          .catch(error => {
+            console.error('Error sending data:', error);
+          });
+      }
+
+      function update() {
+        $('#nameError').addClass('d-none');
+        $('#emailError').addClass('d-none');
+        $('#phoneError').addClass('d-none');
+        $('#name').removeClass('is-invalid');
+        $('#email').removeClass('is-invalid');
+        $('#phone').removeClass('is-invalid');
+
+        const name = $('#name').val();
+        const email = $('#email').val();
+        const phone = $('#phone').val();
+        const id = $('#id').val();
+
+        const formData = {
+          name,
+          email,
+          phone,
+          id
+        };
+
+        fetch('/users/update', {
+            method: 'POST', // Use the HTTP method appropriate for your backend
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+          })
+          .then(response => response.json())
+          .then(data => {
+            // Process the response from the backend
+            console.log(data);
+            if (data.responseCode === 200) {
+              showTable();
+              toastr.success(data.responseMessage, '', {
+                timeOut: 3000,
+                progressBar: true
+              });
+            } else if (data.responseCode == 404) {
+              toastr.error(data.responseMessage, '', {
+                timeOut: 3000,
+                progressBar: true
+              });
+            } else if (data.responseCode == 500) {
+              toastr.error(data.responseMessage, '', {
+                timeOut: 3000,
+                progressBar: true
+              });
+            } else {
+              var errors = data.responseMessage;
+              if (errors && errors.length > 0) {
+                $.each(errors, (index, err) => {
+                  if (err.path == 'name') {
+                    $('#name').addClass('is-invalid');
+                    $('#nameError').removeClass('d-none');
+                    $('#nameError').text(err.msg);
+                  }
+                  if (err.path == 'email') {
+                    $('#email').addClass('is-invalid');
+                    $('#emailError').removeClass('d-none');
+                    $('#emailError').text(err.msg);
+                  }
+                  if (err.path == 'phone') {
+                    $('#phone').addClass('is-invalid');
+                    $('#phoneError').removeClass('d-none');
+                    $('#phoneError').text(err.msg);
+                  }
+
+                });
+                return;
+              }
+            }
+          })
+          .catch(error => {
+            console.error('Error sending data:', error);
+          });
+        }
     </script>
 
 
